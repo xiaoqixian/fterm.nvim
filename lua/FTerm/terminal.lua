@@ -1,21 +1,21 @@
-local U = require('FTerm.utils')
+local U = require('fterm.utils')
 
 local A = vim.api
 local fn = vim.fn
 local cmd = A.nvim_command
 
 ---@alias WinId number Floating Window's ID
----@alias BufId number Terminal Buffer's ID
+---@alias BufId number _Terminal Buffer's ID
 
----@class Term
+---@class _Term
 ---@field win WinId
 ---@field buf BufId
----@field terminal? number Terminal's job id
+---@field terminal? number _Terminal's job id
 ---@field config Config
-local Term = {}
+local _Term = {}
 
----Term:new creates a new terminal instance
-function Term:new()
+---_Term:new creates a new terminal instance
+function _Term:new()
     return setmetatable({
         win = nil,
         buf = nil,
@@ -24,12 +24,12 @@ function Term:new()
     }, { __index = self })
 end
 
----Term:setup overrides the terminal windows configuration ie. dimensions
+---_Term:setup overrides the terminal windows configuration ie. dimensions
 ---@param cfg Config
----@return Term
-function Term:setup(cfg)
+---@return _Term
+function _Term:setup(cfg)
     if not cfg then
-        return vim.notify('FTerm: setup() is optional. Please remove it!', vim.log.levels.WARN)
+        return vim.notify('fterm: setup() is optional. Please remove it!', vim.log.levels.WARN)
     end
 
     self.config = vim.tbl_deep_extend('force', self.config, cfg)
@@ -37,20 +37,20 @@ function Term:setup(cfg)
     return self
 end
 
----Term:store adds the given floating windows and buffer to the list
+---_Term:store adds the given floating windows and buffer to the list
 ---@param win WinId
 ---@param buf BufId
----@return Term
-function Term:store(win, buf)
+---@return _Term
+function _Term:store(win, buf)
     self.win = win
     self.buf = buf
 
     return self
 end
 
----Term:create_buf creates a scratch buffer for floating window to consume
+---_Term:create_buf creates a scratch buffer for floating window to consume
 ---@return BufId
-function Term:create_buf()
+function _Term:create_buf()
     -- If previous buffer exists then return it
     local prev = self.buf
 
@@ -66,10 +66,10 @@ function Term:create_buf()
     return buf
 end
 
----Term:create_win creates a new window with a given buffer
+---_Term:create_win creates a new window with a given buffer
 ---@param buf BufId
 ---@return WinId
-function Term:create_win(buf)
+function _Term:create_win(buf)
     local cfg = self.config
 
     local dim = U.get_dimension(cfg.dimensions)
@@ -90,9 +90,9 @@ function Term:create_win(buf)
     return win
 end
 
----Term:handle_exit gracefully closed/kills the terminal
+---_Term:handle_exit gracefully closed/kills the terminal
 ---@private
-function Term:handle_exit(job_id, code, ...)
+function _Term:handle_exit(job_id, code, ...)
     if self.config.auto_close and code == 0 then
         self:close(true)
     end
@@ -101,16 +101,16 @@ function Term:handle_exit(job_id, code, ...)
     end
 end
 
----Term:prompt enters into prompt
----@return Term
-function Term:prompt()
+---_Term:prompt enters into prompt
+---@return _Term
+function _Term:prompt()
     -- cmd('startinsert')
     return self
 end
 
----Term:term opens a terminal inside a buffer
----@return Term
-function Term:open_term()
+---_Term:term opens a terminal inside a buffer
+---@return _Term
+function _Term:open_term()
     -- NOTE: `termopen` will fails if the current buffer is modified
     self.terminal = fn.termopen(U.is_cmd(self.config.cmd), {
         clear_env = self.config.clear_env,
@@ -122,15 +122,15 @@ function Term:open_term()
         end,
     })
 
-    -- This prevents the filetype being changed to `term` instead of `FTerm` when closing the floating window
+    -- This prevents the filetype being changed to `term` instead of `F_Term` when closing the floating window
     A.nvim_buf_set_option(self.buf, 'filetype', self.config.ft)
 
     return self:prompt()
 end
 
----Term:open does all the magic of opening terminal
----@return Term
-function Term:open()
+---_Term:open does all the magic of opening terminal
+---@return _Term
+function _Term:open()
     -- Move to existing window if the window already exists
     if U.is_win_valid(self.win) then
         return A.nvim_set_current_win(self.win)
@@ -149,10 +149,10 @@ function Term:open()
     return self:store(win, buf):open_term()
 end
 
----Term:close does all the magic of closing terminal and clearing the buffers/windows
+---_Term:close does all the magic of closing terminal and clearing the buffers/windows
 ---@param force? boolean If true, kill the terminal otherwise hide it
----@return Term
-function Term:close(force)
+---@return _Term
+function _Term:close(force)
     if not U.is_win_valid(self.win) then
         return self
     end
@@ -175,9 +175,9 @@ function Term:close(force)
     return self
 end
 
----Term:toggle is used to toggle the terminal window
----@return Term
-function Term:toggle()
+---_Term:toggle is used to toggle the terminal window
+---@return _Term
+function _Term:toggle()
     -- If window is stored and valid then it is already opened, then close it
     if U.is_win_valid(self.win) then
         self:close()
@@ -188,10 +188,10 @@ function Term:toggle()
     return self
 end
 
----Term:run is used to (open and) run commands to terminal window
+---_Term:run is used to (open and) run commands to terminal window
 ---@param command Command
----@return Term
-function Term:run(command)
+---@return _Term
+function _Term:run(command)
     self:open()
 
     local exec = U.is_cmd(command)
@@ -207,4 +207,4 @@ function Term:run(command)
     return self
 end
 
-return Term
+return _Term
